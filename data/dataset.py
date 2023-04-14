@@ -3,23 +3,8 @@ from torch.utils.data import Dataset
 
 import datasets
 
-import numpy as np
-
-from nltk.tokenize import word_tokenize
-from nltk.corpus import wordnet, stopwords
-from nltk.stem import WordNetLemmatizer
-from nltk import download, pos_tag
-download('punkt')
-download('wordnet')
-download('omw-1.4')
-download('averaged_perceptron_tagger')
-download('stopwords')
-
-from sklearn.feature_extraction.text import TfidfVectorizer
-
 import os
-from collections import defaultdict
-from typing import List, Callable
+from typing import List
 
 LABEL_NUM = 28
 
@@ -55,6 +40,9 @@ label_names = {
 }
 
 chosen_labels = [0, 1, 2, 3, 7, 10, 15, 17, 18, 20, 24, 25, 26]
+
+renumbered_labels = dict(zip(chosen_labels, list(range(len(chosen_labels)))))
+renumbered_labels[27] = len(chosen_labels)
 
 parent_labels_dir = "./go_emotions_labels"
 labels_dir = f"{parent_labels_dir}/merged_labels.pt"
@@ -120,7 +108,7 @@ def load_labels(train_labels: List[List[int]], valid_labels: List[List[int]], te
                 min_label = mapped_label
         
         label_occurances[min_label] += 1
-        new_labels.append(min_label)
+        new_labels.append(renumbered_labels[min_label])
 
     new_labels = torch.tensor(new_labels)
     new_train_labels = new_labels[:train_split_point]
@@ -184,33 +172,3 @@ class EmotionsDataset(Dataset):
     
     def __getitem__(self, index):
         return self.x[index], self.y[index]
-    
-class EmotionsDataset_TFIDF(EmotionsDataset):
-    def __init__(self, split="train") -> None:
-        super().__init__(split)
-
-        self.y = np.asarray(self.y)
-
-        self.x = [word.lower() for word in self.x]
-        self.x = [word_tokenize(word) for word in self.x]
-
-        word_tags = defaultdict(lambda: wordnet.NOUN)
-        word_tags['J'] = wordnet.ADJ
-        word_tags['V'] = wordnet.VERB
-        word_tags['R'] = wordnet.ADV
-
-        for i, text in enumerate(self.x):
-            lemmed_text = []
-            lemmer = WordNetLemmatizer()
-
-            for word, tag in pos_tag(text):
-                if word not in stopwords.words('english') and word.isalpha():
-                    lem_word = lemmer.lemmatize(word, word_tags[tag[0]])
-                    lemmed_text.append(lem_word)
-
-            self.x[i] = str(lemmed_text)
-
-        tfidf_vectoriser = TfidfVectorizer()
-        tfidf_vectoriser.fit(self.x)
-
-        self.x = tfidf_vectoriser.transform(self.x)
