@@ -3,6 +3,8 @@ from torch.utils.data import Dataset
 
 import datasets
 
+import fasttext.util
+
 import os
 from typing import List
 
@@ -172,3 +174,9 @@ class EmotionsDataset(Dataset):
     
     def __getitem__(self, index):
         return self.x[index], self.y[index]
+    
+def download_model():
+    if os.path.exists('./cc.en.300.bin'):
+        return
+    
+    fasttext.util.download_model('en', if_exists='ignore')
