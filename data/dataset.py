@@ -6,6 +6,7 @@ import datasets
 import fasttext.util
 
 import os
+from IPython.utils import io
 from typing import List
 
 LABEL_NUM = 28
@@ -178,5 +179,6 @@ class EmotionsDataset(Dataset):
 def download_model():
     if os.path.exists('./cc.en.300.bin'):
         return
-    
-    fasttext.util.download_model('en', if_exists='ignore')
+
+    with io.capture_output() as captured:
+        fasttext.util.download_model('en', if_exists='ignore')

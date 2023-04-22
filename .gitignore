@@ -1,3 +1,5 @@
 go_emotions_labels
 *.pyc
 cc.en.300.bin.gz.part
+*.bin
+*.gz
